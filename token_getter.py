@@ -134,7 +134,7 @@ class GitHubApp(GitHub):
         print(f'curl -i -H "Authorization: token {iat}" -H "Accept: application/vnd.github.machine-man-preview+json" https://api.github.com{endpoint}')
 
 if __name__ == '__main__':
-    
+
     pem_path = 'pem.txt'
     app_id = os.getenv('INPUT_APP_ID')
     nwo = os.getenv('GITHUB_REPOSITORY')
@@ -148,5 +148,5 @@ if __name__ == '__main__':
     token = app.get_installation_access_token(installation_id=id)
     assert token, 'Token not returned!'
 
-    print(f"::add-mask::{token}")
-    print(f"::set-output name=app_token::{token}")
+    os.system(f'echo ::add-mask::{token}')
+    os.system(f'echo "app_token={token}">> $GITHUB_ENV')
