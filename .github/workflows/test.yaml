@@ -37,13 +37,13 @@ jobs:
           app-id: ${{ vars.VCT_GHT_APP_ID }}
           private-key: ${{ secrets.VCT_GHT_APP_PEM }}
           owner: ${{ github.repository_owner }}
-          repositories: "actions-app-token,redis-ipc"
+          # repositories: "actions-app-token"
 
       - name: Check App Installation Token
         run: |
           echo "This token is masked: ${TOKEN}"
         env:
-          TOKEN: ${{ steps.generate-token.outputs.app_token }}
+          TOKEN: ${{ steps.generate-token.outputs.token }}
 
       # the example 'gh' command is not there
       #- name: Check the GH token
