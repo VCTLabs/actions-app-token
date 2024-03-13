@@ -27,8 +27,8 @@ jobs:
         id: get_token
         uses: ./ # Uses an action in the root directory
         with:
-          APP_PEM: ${{ secrets.APP_PEM }}
-          APP_ID: ${{ secrets.APP_ID }}
+          APP_PEM: ${{ secrets.VCT_GHT_APP_PEM }}
+          APP_ID: ${{ vars.VCT_GHT_APP_ID }}
 
       - name: Get App Installation Token
         run: |
