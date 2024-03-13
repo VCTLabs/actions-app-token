@@ -24,17 +24,11 @@ jobs:
           bash -c set
 
       #- name: Get token local action
-        #id: get_token
+        #id: generate-token
         #uses: ./ # Uses an action in the root directory
         #with:
           #APP_PEM: ${{ secrets.VCT_GHT_APP_PEM }}
           #APP_ID: ${{ vars.VCT_GHT_APP_ID }}
-
-      #- name: Get App Installation Token
-        #run: |
-          #echo "This token is masked: ${TOKEN}"
-        #env:
-          #TOKEN: ${{ steps.get_token.outputs.app_token }}
 
       - name: Generate GH token
         id: generate-token
@@ -43,9 +37,17 @@ jobs:
           app-id: ${{ vars.VCT_GHT_APP_ID }}
           private-key: ${{ secrets.VCT_GHT_APP_PEM }}
           owner: ${{ github.repository_owner }}
+          repositories: "actions-app-token,redis-ipc"
 
-      - name: Check the GH token
-        env:
-          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
+      - name: Check App Installation Token
         run: |
-          gh api actions-app-token
+          echo "This token is masked: ${TOKEN}"
+        env:
+          TOKEN: ${{ steps.generate-token.outputs.app_token }}
+
+      # the example 'gh' command is not there
+      #- name: Check the GH token
+        #env:
+          #GH_TOKEN: ${{ steps.generate-token.outputs.token }}
+        #run: |
+          #gh api actions-app-token
