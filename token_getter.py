@@ -74,11 +74,12 @@ class GitHubApp(GitHub):
             "exp": now + (60),
             "iss": self.app_id
         }
-        private_key = Path(self.path).read_text()
 
-        private_key_loaded = serialization.load_pem_private_key(
-            data=private_key.encode(), password=None
-        )
+        with open(self.path, 'rb') as key_file:
+            private_key_loaded = serialization.load_pem_private_key(
+                data=key_file.read(),
+                password=None,
+            )
         return jwt.encode(payload=payload, key=private_key_loaded, algorithm="RS256")
 
     def get_installation_id(self):
