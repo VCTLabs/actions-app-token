@@ -18,24 +18,22 @@ class GitHubApp(GitHub):
     def __init__(self, pem_path, app_id, nwo):
         super().__init__()
         self.app_id = app_id
-
         self.path = Path(pem_path)
-        self.app_id = app_id
         if not self.path.is_file():
             raise ValueError(
-                f'argument: `pem_path` must be a valid filename. {pem_path} was not found.'
+                f"argument: `pem_path` must be a valid filename. {pem_path} was not found."
             )
         self.nwo = nwo
 
     def get_app(self):
-        with open(str(self.path), 'rb') as key_file:
+        with open(str(self.path), "rb") as key_file:
             client = GitHub()
             client.login_as_app(private_key_pem=key_file.read(), app_id=self.app_id)
         return client
 
     def get_installation(self, installation_id):
         "login as app installation without requesting previously gathered data."
-        with open(str(self.path), 'rb') as key_file:
+        with open(str(self.path), "rb") as key_file:
             client = GitHub()
             client.login_as_app_installation(
                 private_key_pem=key_file.read(),
@@ -56,7 +54,7 @@ class GitHubApp(GitHub):
     def get_test_repo(self):
         repo = self.get_all_repos(self.get_test_installation_id())[0]
         appInstallation = self.get_test_installation()
-        owner, name = repo['full_name'].split('/')
+        owner, name = repo["full_name"].split("/")
         return appInstallation.repository(owner, name)
 
     def get_test_issue(self):
@@ -72,7 +70,7 @@ class GitHubApp(GitHub):
         now = self._now_int()
         payload = {"iat": now, "exp": now + (60), "iss": self.app_id}
 
-        with open(str(self.path)h, 'rb') as key_file:
+        with open(str(self.path), "rb") as key_file:
             private_key_loaded = serialization.load_pem_private_key(
                 data=key_file.read(),
                 password=None,
@@ -82,35 +80,35 @@ class GitHubApp(GitHub):
     def get_installation_id(self):
         "https://developer.github.com/v3/apps/#find-repository-installation"
 
-        owner, repo = self.nwo.split('/')
+        owner, repo = self.nwo.split("/")
 
-        url = f'https://api.github.com/repos/{owner}/{repo}/installation'
+        url = f"https://api.github.com/repos/{owner}/{repo}/installation"
 
         headers = {
-            'Authorization': f'Bearer {self.get_jwt().decode()}',
-            'Accept': 'application/vnd.github.machine-man-preview+json',
+            "Authorization": f"Bearer {self.get_jwt().decode()}",
+            "Accept": "application/vnd.github.machine-man-preview+json",
         }
 
-        response = requests.get(url=url, headers=headers)
+        response = requests.get(url=url, headers=headers, timeout=5)
         if response.status_code != 200:
-            raise Exception(f'Status code : {response.status_code}, {response.json()}')
-        return response.json()['id']
+            raise Exception(f"Status code : {response.status_code}, {response.json()}")
+        return response.json()["id"]
 
     def get_installation_access_token(self, installation_id):
         "Get the installation access token for debugging."
 
         url = (
-            f'https://api.github.com/app/installations/{installation_id}/access_tokens'
+            f"https://api.github.com/app/installations/{installation_id}/access_tokens"
         )
         headers = {
-            'Authorization': f'Bearer {self.get_jwt().decode()}',
-            'Accept': 'application/vnd.github.machine-man-preview+json',
+            "Authorization": f"Bearer {self.get_jwt().decode()}",
+            "Accept": "application/vnd.github.machine-man-preview+json",
         }
 
-        response = requests.post(url=url, headers=headers)
+        response = requests.post(url=url, headers=headers, timeout=10)
         if response.status_code != 201:
-            raise Exception(f'Status code : {response.status_code}, {response.json()}')
-        return response.json()['token']
+            raise Exception(f"Status code : {response.status_code}, {response.json()}")
+        return response.json()["token"]
 
     def _extract(self, d, keys):
         "extract selected keys from a dict."
@@ -124,19 +122,19 @@ class GitHubApp(GitHub):
 
         Useful for testing and debugging.
         """
-        url = 'https://api.github.com/installation/repositories'
+        url = "https://api.github.com/installation/repositories"
         headers = {
-            'Authorization': f'token {self.get_installation_access_token(installation_id)}',
-            'Accept': 'application/vnd.github.machine-man-preview+json',
+            "Authorization": f"token {self.get_installation_access_token(installation_id)}",
+            "Accept": "application/vnd.github.machine-man-preview+json",
         }
 
-        response = requests.get(url=url, headers=headers)
+        response = requests.get(url=url, headers=headers, timeout=5)
 
         if response.status_code >= 400:
-            raise Exception(f'Status code : {response.status_code}, {response.json()}')
+            raise Exception(f"Status code : {response.status_code}, {response.json()}")
 
-        fields = ['name', 'full_name', 'id']
-        return [self._extract(x, fields) for x in response.json()['repositories']]
+        fields = ["name", "full_name", "id"]
+        return [self._extract(x, fields) for x in response.json()["repositories"]]
 
     def generate_installation_curl(self, endpoint):
         iat = self.get_installation_access_token()
@@ -145,20 +143,22 @@ class GitHubApp(GitHub):
         )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
-    pem_path = 'pem.txt'
-    app_id = os.getenv('INPUT_APP_ID')
-    nwo = os.getenv('GITHUB_REPOSITORY')
+    pem_path = "pem.txt"
+    app_id = os.getenv("INPUT_APP_ID")
+    nwo = os.getenv("GITHUB_REPOSITORY")
+    env_file = os.getenv("GITHUB_ENV")
 
-    assert pem_path, 'Must supply input APP_PEM'
-    assert app_id, 'Must supply input APP_ID'
+    assert pem_path, "Must supply input APP_PEM"
+    assert app_id, "Must supply input APP_ID"
     assert nwo, "The environment variable GITHUB_REPOSITORY was not found."
 
     app = GitHubApp(pem_path=pem_path, app_id=app_id, nwo=nwo)
     id = app.get_installation_id()
     token = app.get_installation_access_token(installation_id=id)
-    assert token, 'Token not returned!'
+    assert token, "Token not returned!"
 
-    os.system(f'echo ::add-mask::{token}')
-    os.system(f'echo "app_token={token}">> $GITHUB_ENV')
+    print(f"::add-mask::{token}")
+    with open(env_file, "a") as myfile:
+        myfile.write(f"app_token={token}\n")
