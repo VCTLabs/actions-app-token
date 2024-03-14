@@ -136,12 +136,6 @@ class GitHubApp(GitHub):
         fields = ["name", "full_name", "id"]
         return [self._extract(x, fields) for x in response.json()["repositories"]]
 
-    def generate_installation_curl(self, endpoint):
-        iat = self.get_installation_access_token()
-        print(
-            f'curl -i -H "Authorization: token {iat}" -H "Accept: application/vnd.github.machine-man-preview+json" https://api.github.com{endpoint}'
-        )
-
 
 if __name__ == "__main__":
 
@@ -155,8 +149,8 @@ if __name__ == "__main__":
     assert nwo, "The environment variable GITHUB_REPOSITORY was not found."
 
     app = GitHubApp(pem_path=pem_path, app_id=app_id, nwo=nwo)
-    id = app.get_installation_id()
-    token = app.get_installation_access_token(installation_id=id)
+    inst_id = app.get_installation_id()
+    token = app.get_installation_access_token(installation_id=inst_id)
     assert token, "Token not returned!"
 
     print(f"::add-mask::{token}")
