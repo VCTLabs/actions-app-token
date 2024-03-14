@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# user/env/test bits
+pem.txt
+
 # C extensions
 *.so
 

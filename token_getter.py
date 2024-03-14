@@ -2,9 +2,8 @@ import os
 import time
 from pathlib import Path
 
-import jwt
 import requests
-from cryptography.hazmat.primitives import serialization
+from jwt import JWT, jwk_from_pem
 from github3 import GitHub
 
 
@@ -65,17 +64,17 @@ class GitHubApp(GitHub):
         """
         This is needed to retrieve the installation access token (for debugging).
 
-        Useful for debugging purposes.  Must call .decode() on returned object to get string.
+        Useful for debugging purposes.
         """
         now = self._now_int()
-        payload = {"iat": now, "exp": now + (60), "iss": self.app_id}
+        payload = {"iat": now, "exp": now + (180), "iss": self.app_id}
 
-        with open(str(self.path), "rb") as key_file:
-            private_key_loaded = serialization.load_pem_private_key(
-                data=key_file.read(),
-                password=None,
-            )
-        return jwt.encode(payload=payload, key=private_key_loaded, algorithm="RS256")
+        # Open PEM file
+        with open(str(self.path), "rb") as pem_file:
+            signing_key = jwk_from_pem(pem_file.read())
+
+        jwt_instance = JWT()
+        return jwt_instance.encode(payload, signing_key, alg="RS256")
 
     def get_installation_id(self):
         "https://developer.github.com/v3/apps/#find-repository-installation"
@@ -85,11 +84,13 @@ class GitHubApp(GitHub):
         url = f"https://api.github.com/repos/{owner}/{repo}/installation"
 
         headers = {
-            "Authorization": f"Bearer {self.get_jwt().decode()}",
-            "Accept": "application/vnd.github.machine-man-preview+json",
+            "Authorization": f"Bearer {self.get_jwt()}",
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28",
         }
 
         response = requests.get(url=url, headers=headers, timeout=5)
+
         if response.status_code != 200:
             raise Exception(f"Status code : {response.status_code}, {response.json()}")
         return response.json()["id"]
@@ -101,11 +102,13 @@ class GitHubApp(GitHub):
             f"https://api.github.com/app/installations/{installation_id}/access_tokens"
         )
         headers = {
-            "Authorization": f"Bearer {self.get_jwt().decode()}",
-            "Accept": "application/vnd.github.machine-man-preview+json",
+            "Authorization": f"Bearer {self.get_jwt()}",
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28",
         }
 
         response = requests.post(url=url, headers=headers, timeout=10)
+
         if response.status_code != 201:
             raise Exception(f"Status code : {response.status_code}, {response.json()}")
         return response.json()["token"]
@@ -125,7 +128,8 @@ class GitHubApp(GitHub):
         url = "https://api.github.com/installation/repositories"
         headers = {
             "Authorization": f"token {self.get_installation_access_token(installation_id)}",
-            "Accept": "application/vnd.github.machine-man-preview+json",
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28",
         }
 
         response = requests.get(url=url, headers=headers, timeout=5)
