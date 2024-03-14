@@ -15,7 +15,7 @@ jobs:
       # To use this repository's private action,
       # you must check out the repository
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -23,31 +23,15 @@ jobs:
         run: |
           bash -c set
 
-      #- name: Get token local action
-        #id: generate-token
-        #uses: ./ # Uses an action in the root directory
-        #with:
-          #APP_PEM: ${{ secrets.VCT_GHT_APP_PEM }}
-          #APP_ID: ${{ vars.VCT_GHT_APP_ID }}
-
-      - name: Generate GH token
-        id: generate-token
-        uses: actions/create-github-app-token@v1
+      - name: Get token local action
+        id: get_token
+        uses: ./  # Uses an action in the root directory
         with:
-          app-id: ${{ vars.VCT_GHT_APP_ID }}
-          private-key: ${{ secrets.VCT_GHT_APP_PEM }}
-          owner: ${{ github.repository_owner }}
-          # repositories: "actions-app-token"
+          APP_ID: ${{ vars.VCT_GHT_APP_ID }}
+          APP_PEM: ${{ secrets.VCT_GHT_APP_PEM }}
 
       - name: Check App Installation Token
         run: |
           echo "This token is masked: ${TOKEN}"
         env:
-          TOKEN: ${{ steps.generate-token.outputs.token }}
-
-      # the example 'gh' command is not there
-      #- name: Check the GH token
-        #env:
-          #GH_TOKEN: ${{ steps.generate-token.outputs.token }}
-        #run: |
-          #gh api actions-app-token
+          TOKEN: ${{ steps.get_token.outputs.app_token }}

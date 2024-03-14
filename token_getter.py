@@ -2,6 +2,7 @@ from collections import namedtuple, Counter
 from github3 import GitHub
 from pathlib import Path
 from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
 import time
 import json
 import jwt
@@ -73,9 +74,12 @@ class GitHubApp(GitHub):
             "exp": now + (60),
             "iss": self.app_id
         }
-        with open(self.path, 'rb') as key_file:
-            private_key = serialization.load_pem_private_key(key_file.read(), None)
-            return jwt.encode(payload, private_key, algorithm='RS256')
+        private_key = Path(self.path).read_text()
+
+        private_key_loaded = serialization.load_pem_private_key(
+            data=private_key.encode(), password=None
+        )
+        return jwt.encode(payload=payload, key=private_key_loaded, algorithm="RS256")
 
     def get_installation_id(self):
         "https://developer.github.com/v3/apps/#find-repository-installation"
