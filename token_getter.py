@@ -1,14 +1,12 @@
-from collections import namedtuple, Counter
-from github3 import GitHub
-from pathlib import Path
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import rsa
+import os
 import time
-import json
+from pathlib import Path
+
 import jwt
 import requests
-from typing import List
-import os
+from cryptography.hazmat.primitives import serialization
+from github3 import GitHub
+
 
 class GitHubApp(GitHub):
     """
@@ -24,23 +22,26 @@ class GitHubApp(GitHub):
         self.path = Path(pem_path)
         self.app_id = app_id
         if not self.path.is_file():
-            raise ValueError(f'argument: `pem_path` must be a valid filename. {pem_path} was not found.')
+            raise ValueError(
+                f'argument: `pem_path` must be a valid filename. {pem_path} was not found.'
+            )
         self.nwo = nwo
 
     def get_app(self):
-        with open(self.path, 'rb') as key_file:
+        with open(str(self.path), 'rb') as key_file:
             client = GitHub()
-            client.login_as_app(private_key_pem=key_file.read(),
-                                app_id=self.app_id)
+            client.login_as_app(private_key_pem=key_file.read(), app_id=self.app_id)
         return client
 
     def get_installation(self, installation_id):
         "login as app installation without requesting previously gathered data."
-        with open(self.path, 'rb') as key_file:
+        with open(str(self.path), 'rb') as key_file:
             client = GitHub()
-            client.login_as_app_installation(private_key_pem=key_file.read(),
-                                             app_id=self.app_id,
-                                             installation_id=installation_id)
+            client.login_as_app_installation(
+                private_key_pem=key_file.read(),
+                app_id=self.app_id,
+                installation_id=installation_id,
+            )
         return client
 
     def get_test_installation_id(self):
@@ -69,13 +70,9 @@ class GitHubApp(GitHub):
         Useful for debugging purposes.  Must call .decode() on returned object to get string.
         """
         now = self._now_int()
-        payload = {
-            "iat": now,
-            "exp": now + (60),
-            "iss": self.app_id
-        }
+        payload = {"iat": now, "exp": now + (60), "iss": self.app_id}
 
-        with open(self.path, 'rb') as key_file:
+        with open(str(self.path)h, 'rb') as key_file:
             private_key_loaded = serialization.load_pem_private_key(
                 data=key_file.read(),
                 password=None,
@@ -89,8 +86,10 @@ class GitHubApp(GitHub):
 
         url = f'https://api.github.com/repos/{owner}/{repo}/installation'
 
-        headers = {'Authorization': f'Bearer {self.get_jwt().decode()}',
-                   'Accept': 'application/vnd.github.machine-man-preview+json'}
+        headers = {
+            'Authorization': f'Bearer {self.get_jwt().decode()}',
+            'Accept': 'application/vnd.github.machine-man-preview+json',
+        }
 
         response = requests.get(url=url, headers=headers)
         if response.status_code != 200:
@@ -100,9 +99,13 @@ class GitHubApp(GitHub):
     def get_installation_access_token(self, installation_id):
         "Get the installation access token for debugging."
 
-        url = f'https://api.github.com/app/installations/{installation_id}/access_tokens'
-        headers = {'Authorization': f'Bearer {self.get_jwt().decode()}',
-                   'Accept': 'application/vnd.github.machine-man-preview+json'}
+        url = (
+            f'https://api.github.com/app/installations/{installation_id}/access_tokens'
+        )
+        headers = {
+            'Authorization': f'Bearer {self.get_jwt().decode()}',
+            'Accept': 'application/vnd.github.machine-man-preview+json',
+        }
 
         response = requests.post(url=url, headers=headers)
         if response.status_code != 201:
@@ -122,8 +125,10 @@ class GitHubApp(GitHub):
         Useful for testing and debugging.
         """
         url = 'https://api.github.com/installation/repositories'
-        headers={'Authorization': f'token {self.get_installation_access_token(installation_id)}',
-                 'Accept': 'application/vnd.github.machine-man-preview+json'}
+        headers = {
+            'Authorization': f'token {self.get_installation_access_token(installation_id)}',
+            'Accept': 'application/vnd.github.machine-man-preview+json',
+        }
 
         response = requests.get(url=url, headers=headers)
 
@@ -133,10 +138,12 @@ class GitHubApp(GitHub):
         fields = ['name', 'full_name', 'id']
         return [self._extract(x, fields) for x in response.json()['repositories']]
 
-
     def generate_installation_curl(self, endpoint):
         iat = self.get_installation_access_token()
-        print(f'curl -i -H "Authorization: token {iat}" -H "Accept: application/vnd.github.machine-man-preview+json" https://api.github.com{endpoint}')
+        print(
+            f'curl -i -H "Authorization: token {iat}" -H "Accept: application/vnd.github.machine-man-preview+json" https://api.github.com{endpoint}'
+        )
+
 
 if __name__ == '__main__':
 
