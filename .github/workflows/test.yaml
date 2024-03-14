@@ -1,55 +1,36 @@
-name: Tests
-on: [push]
+name: action-tests
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches: [ main ]
 
 jobs:
-  build-temp-container:
+  test_defaults:
     runs-on: ubuntu-latest
+    name: Test local action
     steps:
-      - uses: actions/checkout@master
-      
-      - name: build-temp-container
+      # To use this repository's private action,
+      # you must check out the repository
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Environment
         run: |
-          echo ${PASSWORD} | docker login -u $USERNAME --password-stdin
-          docker build -t hamelsmu/app-token:temp -f prebuild.Dockerfile .
-          docker push hamelsmu/app-token:temp
+          bash -c set
+
+      - name: Get token local action
+        id: get_token
+        uses: ./  # Uses an action in the root directory
+        with:
+          APP_ID: ${{ vars.VCT_GHT_APP_ID }}
+          APP_PEM: ${{ secrets.VCT_GHT_APP_PEM }}
+
+      - name: Check App Installation Token
+        run: |
+          echo "This token is masked: ${TOKEN}"
         env:
-          USERNAME: ${{ secrets.DOCKER_USERNAME }}
-          PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-
-  test-container:
-    needs: [build-temp-container]
-    runs-on: ubuntu-latest
-    steps:
-  
-    - uses: actions/checkout@master
-      
-    # - name: Setup tmate session
-    #   uses: mxschmitt/action-tmate@v1
-    #   env:
-    #     INPUT_APP_PEM: ${{ secrets.APP_PEM }}
-    #     INPUT_APP_ID: ${{ secrets.APP_ID }}
-
-    # tested with https://github.com/apps/fastpages-chatops
-    - name: test
-      id: test
-      uses: docker://hamelsmu/app-token:temp
-      env:
-        INPUT_APP_PEM: ${{ secrets.APP_PEM }}
-        INPUT_APP_ID: ${{ secrets.APP_ID }}
-
-    - name: pre-build action image
-      run: |
-        cd $GITHUB_WORKSPACE
-        echo ${PASSWORD} | docker login -u $USERNAME --password-stdin
-        docker build -t hamelsmu/app-token -f prebuild.Dockerfile .
-        docker push hamelsmu/app-token 
-      env:
-        USERNAME: ${{ secrets.DOCKER_USERNAME }}
-        PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-
-       # tested withhttps://github.com/apps/fastpages-chatops
-    - name: final-test
-      uses: machine-learning-apps/actions-app-token@master
-      with:
-        APP_PEM: ${{ secrets.APP_PEM }}
-        APP_ID: ${{ secrets.APP_ID }}
+          TOKEN: ${{ steps.get_token.outputs.app_token }}
