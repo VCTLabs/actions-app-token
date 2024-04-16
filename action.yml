@@ -6,7 +6,7 @@ inputs:
     description: a base64 encoded string version of your PEM file used to authenticate as a GitHub App.  You can apply this encoding in the terminal `cat key.pem | base64`
     required: true
   APP_ID:
-    description: you GITHUB App ID.
+    description: your GITHUB App ID.
     required: true
 outputs:
   app_token:
@@ -16,4 +16,4 @@ branding:
   icon: 'unlock'
 runs:
   using: 'docker'
-  image: 'docker://hamelsmu/app-token'
+  image: 'Dockerfile'
